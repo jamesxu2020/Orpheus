@@ -1,0 +1,1381 @@
+External:
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Orpheus Phase 0 Dashboard (Single-File)</title>
+  <style>
+    :root{
+      --bg: #0b0f14;
+      --panel: #111826;
+      --panel-2: #0f1623;
+      --border: rgba(255,255,255,.08);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.68);
+
+      /* semantic (not vendor) */
+      --signal-emotion: #7dd3fc;     /* line */
+      --signal-attention: #fbbf24;   /* attention ticks */
+      --signal-motivation: #a78bfa;  /* motivation dots */
+      --signal-neutral: rgba(255,255,255,.35);
+
+      --ok: #34d399;
+      --warn: #fbbf24;
+      --bad: #fb7185;
+
+      --radius: 16px;
+      --pad: 16px;
+      --gap: 14px;
+
+      --shadow: 0 8px 24px rgba(0,0,0,.35);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+
+    * { box-sizing: border-box; }
+    body{
+      margin:0; background: radial-gradient(1200px 800px at 20% 0%, rgba(125,211,252,.10), transparent 60%),
+                          radial-gradient(1200px 800px at 80% 10%, rgba(167,139,250,.10), transparent 60%),
+                          var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+    }
+
+    .page{
+      width: min(1440px, calc(100vw - 48px));
+      margin: 24px auto 40px;
+      display: flex; flex-direction: column;
+      gap: 18px;
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    header.card{
+      padding: 18px 22px;
+    }
+
+    h1{
+      margin: 0;
+      font-size: 26px;
+      letter-spacing: -0.02em;
+      font-weight: 760;
+    }
+    .subhead{
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .exec{
+      padding: 18px 22px;
+      display: grid;
+      grid-template-columns: 1.2fr;
+      gap: 14px;
+    }
+
+    .what-it-means{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+    .wit{
+      background: rgba(255,255,255,.02);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .wit h3{
+      margin:0 0 8px 0;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .wit ul{ margin:0; padding-left: 18px; color: var(--text); font-size: 13px; line-height: 1.35;}
+    .wit li{ margin: 6px 0; }
+
+    .takeaway{
+      margin-top: 4px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px dashed rgba(255,255,255,.16);
+      color: rgba(255,255,255,.9);
+      background: rgba(255,255,255,.02);
+      font-size: 14px;
+      line-height: 1.35;
+    }
+    .takeaway .label{
+      display:block; color: var(--muted);
+      font-size: 12px; margin-bottom: 6px;
+      letter-spacing: .04em;
+    }
+
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      padding: 16px;
+    }
+
+    .widget{
+      background: rgba(255,255,255,.02);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      display:flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 380px;
+    }
+    .widget-header{
+      display:flex; align-items: baseline; justify-content: space-between;
+      gap: 10px;
+    }
+    .widget-title{
+      font-weight: 740;
+      font-size: 14px;
+      letter-spacing: -0.01em;
+    }
+    .widget-subtitle{
+      font-size: 12px; color: var(--muted);
+    }
+
+    video{
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #000;
+      max-height: 320px;
+    }
+
+    /* timeline */
+    .timeline-wrap{
+      position: relative;
+      width: 100%;
+      height: 320px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      overflow: hidden;
+    }
+    .timeline-topbar{
+      position:absolute; inset: 0 0 auto 0;
+      padding: 10px 10px 6px 10px;
+      display:flex; justify-content: space-between; align-items: center;
+      pointer-events: none;
+    }
+    .legend{
+      display:flex; gap: 12px; align-items: center;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .leg-item{ display:flex; gap: 6px; align-items: center;}
+    .dot{ width:10px; height:10px; border-radius: 999px; }
+    .dot.emotion{ background: var(--signal-emotion); }
+    .dot.attention{ background: var(--signal-attention); }
+    .dot.motivation{ background: var(--signal-motivation); }
+
+    .timeline-svg{
+      position:absolute; inset: 36px 0 0 0;
+      width: 100%;
+      height: calc(100% - 36px);
+    }
+    .tooltip{
+      position:absolute;
+      pointer-events:none;
+      background: rgba(17,24,38,.96);
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 12px;
+      padding: 10px 10px;
+      font-size: 12px;
+      color: var(--text);
+      box-shadow: var(--shadow);
+      display:none;
+      min-width: 180px;
+    }
+    .tooltip .t-muted{ color: var(--muted); }
+    .tooltip .row{ display:flex; justify-content: space-between; gap: 10px; margin: 4px 0; }
+    .cursor-line{
+      stroke: rgba(255,255,255,.22);
+      stroke-width: 1;
+      shape-rendering: crispEdges;
+    }
+    .highlight-rect{
+      fill: rgba(125,211,252,.10);
+      stroke: rgba(125,211,252,.35);
+      stroke-width: 1;
+    }
+
+    /* Key moments */
+    .keymoments{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      padding: 16px;
+    }
+    .moments-col{
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(255,255,255,.02);
+    }
+    .moments-col h3{
+      margin:0 0 10px 0;
+      font-size: 14px;
+      font-weight: 740;
+    }
+    .moment-card{
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      background: rgba(255,255,255,.015);
+      margin: 10px 0;
+      cursor: pointer;
+      transition: transform .08s ease, border-color .08s ease;
+    }
+    .moment-card:hover{
+      transform: translateY(-1px);
+      border-color: rgba(255,255,255,.18);
+    }
+    .moment-meta{
+      display:flex; justify-content: space-between; align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+    .pillset{ display:flex; gap: 6px; flex-wrap: wrap;}
+    .pill{
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: rgba(255,255,255,.86);
+      background: rgba(255,255,255,.02);
+      white-space: nowrap;
+    }
+    .pill.attn{ border-color: rgba(251,191,36,.35); }
+    .pill.emot{ border-color: rgba(125,211,252,.35); }
+    .pill.motiv{ border-color: rgba(167,139,250,.35); }
+
+    .moment-desc{
+      font-size: 13px;
+      line-height: 1.35;
+      color: rgba(255,255,255,.9);
+    }
+
+    /* Events table */
+    .events.card{ padding: 16px; }
+    .events-header{
+      display:flex; justify-content: space-between; align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .events-title{
+      font-weight: 780;
+      font-size: 14px;
+    }
+    .controls{
+      display:flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    }
+    select, input{
+      background: rgba(255,255,255,.03);
+      color: rgba(255,255,255,.92);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px 10px;
+      font-size: 12px;
+      outline: none;
+    }
+    input::placeholder{ color: rgba(255,255,255,.45); }
+
+    /* Video load controls (optional) */
+    .vid-controls{ display:flex; gap:8px; align-items:center; justify-content:flex-end; flex-wrap: wrap; }
+    .vid-btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding: 7px 10px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.03);
+      color: rgba(255,255,255,.90);
+      font-size: 12px;
+      cursor: pointer;
+      user-select:none;
+    }
+    .vid-btn.secondary{ background: rgba(255,255,255,.02); }
+    .vid-url{
+      width: 220px;
+      max-width: 100%;
+    }
+
+
+    table{
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+    thead th{
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: rgba(15,22,35,.92);
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid var(--border);
+      color: rgba(255,255,255,.8);
+      font-size: 11px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      padding: 10px 10px;
+      text-align: left;
+      cursor: pointer;
+      user-select:none;
+      white-space: nowrap;
+    }
+    tbody td{
+      padding: 10px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      font-size: 12px;
+      color: rgba(255,255,255,.9);
+      vertical-align: top;
+    }
+    tbody tr:hover{
+      background: rgba(255,255,255,.02);
+    }
+    tbody tr.selected{
+      background: rgba(125,211,252,.08);
+      outline: 1px solid rgba(125,211,252,.25);
+    }
+
+    .cell-muted{ color: var(--muted); }
+    .time{ font-family: var(--mono); color: rgba(255,255,255,.86); }
+    .badge{
+      display:inline-flex; align-items:center; gap: 6px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 11px;
+      background: rgba(255,255,255,.02);
+      white-space: nowrap;
+    }
+    .badge .b-dot{ width:8px; height:8px; border-radius: 999px; }
+    .b-dot.low{ background: rgba(255,255,255,.35); }
+    .b-dot.medium{ background: var(--warn); }
+    .b-dot.high{ background: var(--ok); }
+
+    footer.card{
+      padding: 16px 22px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+    footer .primary{
+      color: rgba(255,255,255,.86);
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1100px){
+      .what-it-means{ grid-template-columns: 1fr; }
+      .grid2{ grid-template-columns: 1fr; }
+      .keymoments{ grid-template-columns: 1fr; }
+      video{ max-height: 260px; }
+      .timeline-wrap{ height: 280px; }
+      .widget{ min-height: 340px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- HEADER -->
+    <header class="card">
+      <h1>Phase 0: How People Actually Experienced the Advertising</h1>
+      <div class="subhead">Attention shows what was seen · Emotion shows what registered · Motivation explains why it mattered</div>
+    </header>
+
+    <!-- EXEC NARRATIVE -->
+    <section class="card exec" id="execNarrative">
+      <div class="what-it-means">
+        <div class="wit">
+          <h3>What’s Working</h3>
+          <ul id="witWorking"></ul>
+        </div>
+        <div class="wit">
+          <h3>What’s Creating Friction</h3>
+          <ul id="witFriction"></ul>
+        </div>
+        <div class="wit">
+          <h3>What This Suggests Testing Next</h3>
+          <ul id="witTestNext"></ul>
+        </div>
+      </div>
+
+      <div class="takeaway">
+        <span class="label">One-sentence takeaway</span>
+        <span id="oneSentenceTakeaway"></span>
+      </div>
+    </section>
+
+    <!-- CREATIVE EXPERIENCE -->
+    <section class="card">
+      <div class="grid2">
+        <div class="widget">
+          <div class="widget-header">
+            <div>
+              <div class="widget-title">Creative Playback</div>
+              <div class="widget-subtitle">Creative only</div>
+            </div>
+            <div class="vid-controls">
+              <label class="vid-btn" title="Load a local video file">
+                Load MP4
+                <input type="file" id="creativeFile" accept="video/*" hidden />
+              </label>
+              <input class="vid-url" id="creativeUrlInput" type="text" placeholder="…or paste MP4 URL" />
+              <button class="vid-btn secondary" id="creativeUrlLoad" type="button">Load</button>
+            </div>
+          </div>
+          <video id="creativeVideo" controls preload="metadata"></video>
+          <div class="widget-subtitle">Scrub the video — charts, moments, and events sync automatically.</div>
+        </div>
+
+        <div class="widget">
+          <div class="widget-header">
+            <div>
+              <div class="widget-title">Creative Response Over Time</div>
+              <div class="widget-subtitle">Unified timeline (emotion line + attention markers + motivation markers)</div>
+            </div>
+          </div>
+
+          <div class="timeline-wrap" id="creativeTimeline">
+            <div class="timeline-topbar">
+              <div class="legend">
+                <div class="leg-item"><span class="dot emotion"></span><span>Emotion</span></div>
+                <div class="leg-item"><span class="dot attention"></span><span>Attention markers</span></div>
+                <div class="leg-item"><span class="dot motivation"></span><span>Motivation markers</span></div>
+              </div>
+              <div class="widget-subtitle" id="creativeTimeReadout">00:00.0</div>
+            </div>
+
+            <svg class="timeline-svg" id="creativeSvg" viewBox="0 0 1000 360" preserveAspectRatio="none"></svg>
+            <div class="tooltip" id="creativeTooltip"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROGRAM EXPERIENCE -->
+    <section class="card">
+      <div class="grid2">
+        <div class="widget">
+          <div class="widget-header">
+            <div>
+              <div class="widget-title">Program Context (Including Creative)</div>
+              <div class="widget-subtitle">Full program playback with creative insertion window</div>
+            </div>
+            <div class="vid-controls">
+              <label class="vid-btn" title="Load a local video file">
+                Load MP4
+                <input type="file" id="programFile" accept="video/*" hidden />
+              </label>
+              <input class="vid-url" id="programUrlInput" type="text" placeholder="…or paste MP4 URL" />
+              <button class="vid-btn secondary" id="programUrlLoad" type="button">Load</button>
+            </div>
+          </div>
+          <video id="programVideo" controls preload="metadata"></video>
+          <div class="widget-subtitle" id="programInsertNote"></div>
+        </div>
+
+        <div class="widget">
+          <div class="widget-header">
+            <div>
+              <div class="widget-title">Audience Response During Program</div>
+              <div class="widget-subtitle">Same chart type and scale as creative timeline</div>
+            </div>
+          </div>
+
+          <div class="timeline-wrap" id="programTimeline">
+            <div class="timeline-topbar">
+              <div class="legend">
+                <div class="leg-item"><span class="dot emotion"></span><span>Emotion</span></div>
+                <div class="leg-item"><span class="dot attention"></span><span>Attention markers</span></div>
+                <div class="leg-item"><span class="dot motivation"></span><span>Motivation markers</span></div>
+              </div>
+              <div class="widget-subtitle" id="programTimeReadout">00:00.0</div>
+            </div>
+
+            <svg class="timeline-svg" id="programSvg" viewBox="0 0 1000 360" preserveAspectRatio="none"></svg>
+            <div class="tooltip" id="programTooltip"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- KEY MOMENTS -->
+    <section class="card">
+      <div class="keymoments">
+        <div class="moments-col">
+          <h3>Key Moments — Creative</h3>
+          <div id="creativeMoments"></div>
+        </div>
+        <div class="moments-col">
+          <h3>Key Moments — Program Context</h3>
+          <div id="programMoments"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- EVENTS TABLE -->
+    <section class="card events">
+      <div class="events-header">
+        <div>
+          <div class="events-title">Events (Cross-Signal)</div>
+          <div class="widget-subtitle">MediaProbe-style table expanded with attention + motivation columns</div>
+        </div>
+        <div class="controls">
+          <select id="filterEventType" aria-label="Filter event type">
+            <option value="all">All event types</option>
+            <option value="creative">Creative</option>
+            <option value="program">Program</option>
+            <option value="break">Break</option>
+            <option value="adjacent">Adjacent</option>
+          </select>
+          <input id="searchEvents" type="text" placeholder="Search events…" />
+        </div>
+      </div>
+
+      <div style="overflow:auto; max-height: 420px; border-radius: 14px;">
+        <table id="eventsTable">
+          <thead>
+            <tr>
+              <th data-key="event_name">Event Name</th>
+              <th data-key="event_type">Event Type</th>
+              <th data-key="time_range">Start–End</th>
+
+              <th data-key="mp_emotion">MediaProbe: Emotion</th>
+              <th data-key="mp_intensity">MediaProbe: Intensity</th>
+
+              <th data-key="lumen_attention">Attention Quality</th>
+              <th data-key="lumen_peak">Peak Attention Moment</th>
+
+              <th data-key="rmt_strength">Motivational Strength</th>
+              <th data-key="rmt_need">Dominant Need State</th>
+
+              <th data-key="notes">Notes</th>
+            </tr>
+          </thead>
+          <tbody id="eventsTbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="card">
+      <div class="primary">Phase 0 explains performance. Phase 1 validates and scales it.</div>
+      <div>Diagnostic human-response insights only — not outcome or optimization metrics.</div>
+    </footer>
+
+  </div>
+
+  <script>
+    /*************************************************************************
+     *  ORPHEUS PHASE 0 — SINGLE-FILE DEMO
+     *  Replace the mock DATA + video URLs below with your real payload.
+     *  No external libraries required.
+     *************************************************************************/
+
+    // ---------- UTIL ----------
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    const msToTime = (ms) => {
+      const s = ms / 1000;
+      const m = Math.floor(s / 60);
+      const r = s - m * 60;
+      return `${String(m).padStart(2,'0')}:${r.toFixed(1).padStart(4,'0')}`;
+    };
+    const pick = (arr) => arr[Math.floor(Math.random()*arr.length)];
+    const norm01 = (v, min, max) => (v - min) / (max - min || 1);
+
+    // ---------- MOCK DATA (REPLACE) ----------
+    const DATA = {
+      engagement_id: "demo-001",
+
+      execNarrative: {
+        whatsWorking: [
+          "Strong early engagement when the narrative sets the stakes.",
+          "Brand recognition occurs before the first major emotional peak.",
+          "Motivational cues align best when the message is simple and human."
+        ],
+        creatingFriction: [
+          "Mid-creative drop suggests pacing or information density overload.",
+          "CTA moment is noticed, but emotional support is weaker than earlier beats.",
+          "Context mismatch segments show reduced stability."
+        ],
+        testNext: [
+          "Trim or re-order the mid-section to preserve momentum.",
+          "Shift CTA earlier or reinforce with a simpler visual cue.",
+          "Prioritize contexts that sustain emotional stability around the ad."
+        ],
+        takeaway: "Viewers lock in early, but mid-creative pacing creates a dip; the ad performs best when context sustains emotional stability and motivation is reinforced near the close."
+      },
+
+      videos: {
+        creativeUrl: "", // <-- put mp4 url (same origin or CORS-enabled)
+        programUrl: ""   // <-- put mp4 url
+      },
+
+      creative: {
+        durationMs: 30000,
+        emotionSeries: makeEmotionSeries(30000, 320),
+        attentionMarkers: makeMarkers(30000, 10, ["low","medium","high"]),
+        motivationMarkers: makeMotivationMarkers(30000, 7),
+        keyMoments: [
+          { id:"c1", start_ms: 2000,  end_ms: 6000,  attention:"high",  emotion:"up",   motivation:"moderate", description:"Hook lands quickly — attention and emotion rise together." },
+          { id:"c2", start_ms: 9000,  end_ms: 12000, attention:"medium",emotion:"down", motivation:"weak",     description:"Pacing slows — emotional engagement dips and motivation softens." },
+          { id:"c3", start_ms: 14500, end_ms: 17000, attention:"high",  emotion:"up",   motivation:"strong",   description:"Human moment stabilizes emotion and triggers need-state alignment." },
+          { id:"c4", start_ms: 23000, end_ms: 26500, attention:"medium",emotion:"flat", motivation:"moderate", description:"CTA is visible but emotional support is neutral." }
+        ]
+      },
+
+      program: {
+        durationMs: 180000, // 3 minutes demo
+        creativeInsertionWindows: [{ start_ms: 60000, end_ms: 90000 }], // ad lives 1:00–1:30
+        emotionSeries: makeEmotionSeries(180000, 520),
+        attentionMarkers: makeMarkers(180000, 16, ["low","medium","high"]),
+        motivationMarkers: makeMotivationMarkers(180000, 12),
+        keyMoments: [
+          { id:"p1", start_ms: 52000, end_ms: 59000, attention:"medium", emotion:"up",   motivation:"moderate", description:"Lead-in content primes emotion going into the break." },
+          { id:"p2", start_ms: 61000, end_ms: 66000, attention:"high",   emotion:"up",   motivation:"moderate", description:"Ad entry aligns with elevated engagement in program flow." },
+          { id:"p3", start_ms: 91000, end_ms: 98000, attention:"medium", emotion:"down", motivation:"weak",     description:"Post-ad segment reduces stability — possible context friction." },
+          { id:"p4", start_ms: 140000,end_ms: 150000,attention:"high",   emotion:"up",   motivation:"strong",   description:"Later program beat spikes engagement independent of the ad." }
+        ]
+      },
+
+      events: makeEvents()
+    };
+
+    function makeEmotionSeries(durationMs, points){
+      // returns [{timestamp_ms, value(0..100)}]
+      const out = [];
+      for (let i=0;i<points;i++){
+        const t = Math.round((i/(points-1))*durationMs);
+        // pseudo "EIS": base + waves + a few bumps
+        const x = i/(points-1);
+        let v = 50
+          + 18*Math.sin(2*Math.PI*(x*1.25))
+          + 9*Math.sin(2*Math.PI*(x*3.3 + .2))
+          + 5*Math.sin(2*Math.PI*(x*7.2 + .65));
+        // bumps
+        v += 12*Math.exp(-Math.pow((x-0.16)/0.06,2));
+        v += 10*Math.exp(-Math.pow((x-0.52)/0.05,2));
+        v -= 10*Math.exp(-Math.pow((x-0.34)/0.06,2));
+        v = clamp(v, 0, 100);
+        out.push({ timestamp_ms: t, value: v });
+      }
+      return out;
+    }
+
+    function makeMarkers(durationMs, count, strengths){
+      const out = [];
+      for (let i=0;i<count;i++){
+        out.push({
+          timestamp_ms: Math.round(Math.random()*durationMs),
+          strength: pick(strengths)
+        });
+      }
+      out.sort((a,b)=>a.timestamp_ms-b.timestamp_ms);
+      return out;
+    }
+
+    function makeMotivationMarkers(durationMs, count){
+      const needStates = ["Security", "Belonging", "Progress", "Care", "Control", "Relief"];
+      const strengths = ["weak","moderate","strong"];
+      const out = [];
+      for (let i=0;i<count;i++){
+        out.push({
+          timestamp_ms: Math.round(Math.random()*durationMs),
+          strength: pick(strengths),
+          needState: pick(needStates)
+        });
+      }
+      out.sort((a,b)=>a.timestamp_ms-b.timestamp_ms);
+      return out;
+    }
+
+    function makeEvents(){
+      // a handful of mixed events
+      return [
+        {
+          event_id:"e1", event_name:"Ad Hook", event_type:"creative",
+          start_ms: 2000, end_ms: 6000,
+          mediaprobe:{ emotion_avg: 72, intensity_label:"high" },
+          lumen:{ attention_quality:"high", peak_timestamp_ms: 4100 },
+          rmt:{ motivation_strength:"moderate", dominant_need_state:"Belonging" },
+          notes:"Early hook drives strong engagement."
+        },
+        {
+          event_id:"e2", event_name:"Mid Narrative", event_type:"creative",
+          start_ms: 9000, end_ms: 12000,
+          mediaprobe:{ emotion_avg: 44, intensity_label:"medium" },
+          lumen:{ attention_quality:"medium", peak_timestamp_ms: 9800 },
+          rmt:{ motivation_strength:"weak", dominant_need_state:"Control" },
+          notes:"Pacing dip; consider trim or reorder."
+        },
+        {
+          event_id:"e3", event_name:"Lead-in Segment", event_type:"adjacent",
+          start_ms: 52000, end_ms: 59000,
+          mediaprobe:{ emotion_avg: 63, intensity_label:"high" },
+          lumen:{ attention_quality:"medium", peak_timestamp_ms: 56000 },
+          rmt:{ motivation_strength:"moderate", dominant_need_state:"Progress" },
+          notes:"Context primes emotion before ad."
+        },
+        {
+          event_id:"e4", event_name:"Ad Insertion Window", event_type:"program",
+          start_ms: 60000, end_ms: 90000,
+          mediaprobe:{ emotion_avg: 58, intensity_label:"medium" },
+          lumen:{ attention_quality:"high", peak_timestamp_ms: 64000 },
+          rmt:{ motivation_strength:"moderate", dominant_need_state:"Care" },
+          notes:"In-context response holds; watch post-ad stability."
+        },
+        {
+          event_id:"e5", event_name:"Post Break Segment", event_type:"adjacent",
+          start_ms: 91000, end_ms: 98000,
+          mediaprobe:{ emotion_avg: 41, intensity_label:"low" },
+          lumen:{ attention_quality:"low", peak_timestamp_ms: 93000 },
+          rmt:{ motivation_strength:"weak", dominant_need_state:"Relief" },
+          notes:"Friction after ad; consider different context."
+        },
+        {
+          event_id:"e6", event_name:"Break", event_type:"break",
+          start_ms: 59000, end_ms: 60000,
+          mediaprobe:{ emotion_avg: 49, intensity_label:"medium" },
+          lumen:{ attention_quality:"low", peak_timestamp_ms: 59500 },
+          rmt:{ motivation_strength:"weak", dominant_need_state:"Security" },
+          notes:"Transition point."
+        }
+      ];
+    }
+
+    // ---------- RENDER EXEC ----------
+    function renderExec(){
+      const { whatsWorking, creatingFriction, testNext, takeaway } = DATA.execNarrative;
+      const ul1 = document.getElementById("witWorking");
+      const ul2 = document.getElementById("witFriction");
+      const ul3 = document.getElementById("witTestNext");
+      ul1.innerHTML = whatsWorking.map(x=>`<li>${escapeHtml(x)}</li>`).join("");
+      ul2.innerHTML = creatingFriction.map(x=>`<li>${escapeHtml(x)}</li>`).join("");
+      ul3.innerHTML = testNext.map(x=>`<li>${escapeHtml(x)}</li>`).join("");
+      document.getElementById("oneSentenceTakeaway").textContent = takeaway;
+    }
+
+    // ---------- VIDEOS ----------
+    const creativeVideo = document.getElementById("creativeVideo");
+    const programVideo  = document.getElementById("programVideo");
+
+    function initVideos(){
+      // Option A: hardcode URLs in DATA.videos (same-origin or CORS-enabled).
+      // Option B: use the "Load MP4" control to pick a local file.
+      // Option C: paste a direct MP4 URL and click Load.
+
+      // Restore saved URLs (if any)
+      try{
+        const savedCreative = localStorage.getItem("orpheus_creative_url") || "";
+        const savedProgram  = localStorage.getItem("orpheus_program_url") || "";
+        if (savedCreative) DATA.videos.creativeUrl = savedCreative;
+        if (savedProgram)  DATA.videos.programUrl  = savedProgram;
+        const cIn = document.getElementById("creativeUrlInput");
+        const pIn = document.getElementById("programUrlInput");
+        if (cIn && savedCreative) cIn.value = savedCreative;
+        if (pIn && savedProgram)  pIn.value = savedProgram;
+      } catch(e){ /* ignore */ }
+
+      if (DATA.videos.creativeUrl) creativeVideo.src = DATA.videos.creativeUrl;
+      if (DATA.videos.programUrl)  programVideo.src  = DATA.videos.programUrl;
+
+      // Wire local file pickers
+      const creativeFile = document.getElementById("creativeFile");
+      const programFile  = document.getElementById("programFile");
+
+      if (creativeFile){
+        creativeFile.addEventListener("change", () => {
+          const f = creativeFile.files && creativeFile.files[0];
+          if (!f) return;
+          const url = URL.createObjectURL(f);
+          creativeVideo.src = url;
+          creativeVideo.load();
+        });
+      }
+      if (programFile){
+        programFile.addEventListener("change", () => {
+          const f = programFile.files && programFile.files[0];
+          if (!f) return;
+          const url = URL.createObjectURL(f);
+          programVideo.src = url;
+          programVideo.load();
+        });
+      }
+
+      // Wire URL loaders
+      const cLoadBtn = document.getElementById("creativeUrlLoad");
+      const pLoadBtn = document.getElementById("programUrlLoad");
+
+      if (cLoadBtn){
+        cLoadBtn.addEventListener("click", () => {
+          const v = (document.getElementById("creativeUrlInput")?.value || "").trim();
+          if (!v) return;
+          creativeVideo.src = v;
+          creativeVideo.load();
+          try{ localStorage.setItem("orpheus_creative_url", v); } catch(e){}
+        });
+      }
+      if (pLoadBtn){
+        pLoadBtn.addEventListener("click", () => {
+          const v = (document.getElementById("programUrlInput")?.value || "").trim();
+          if (!v) return;
+          programVideo.src = v;
+          programVideo.load();
+          try{ localStorage.setItem("orpheus_program_url", v); } catch(e){}
+        });
+      }
+
+      const insert = DATA.program.creativeInsertionWindows?.[0];
+      const noteEl = document.getElementById("programInsertNote");
+      if (insert){
+        noteEl.textContent = `Creative insertion window: ${msToTime(insert.start_ms)} – ${msToTime(insert.end_ms)} (highlighted on timeline).`;
+      } else {
+        noteEl.textContent = "";
+      }
+    }
+
+    // ---------- TIMELINE CHART (SVG) ----------
+    function buildTimelineChart(opts){
+      const {
+        containerId, svgId, tooltipId, timeReadoutId,
+        durationMs, emotionSeries, attentionMarkers, motivationMarkers,
+        highlightRanges = []
+      } = opts;
+
+      const container = document.getElementById(containerId);
+      const svg = document.getElementById(svgId);
+      const tooltip = document.getElementById(tooltipId);
+      const timeReadout = document.getElementById(timeReadoutId);
+
+      const VBW = 1000, VBH = 360;
+      const PADL = 32, PADR = 16, PADT = 12, PADB = 22;
+      const W = VBW - PADL - PADR;
+      const H = VBH - PADT - PADB;
+
+      svg.innerHTML = "";
+
+      // Background grid lines
+      const grid = document.createElementNS("http://www.w3.org/2000/svg","g");
+      grid.setAttribute("opacity","0.6");
+      for (let i=0;i<=4;i++){
+        const y = PADT + (H*(i/4));
+        const line = document.createElementNS("http://www.w3.org/2000/svg","line");
+        line.setAttribute("x1", PADL);
+        line.setAttribute("x2", PADL+W);
+        line.setAttribute("y1", y);
+        line.setAttribute("y2", y);
+        line.setAttribute("stroke", "rgba(255,255,255,.08)");
+        line.setAttribute("stroke-width", "1");
+        grid.appendChild(line);
+      }
+      svg.appendChild(grid);
+
+      // Highlight ranges
+      for (const r of highlightRanges){
+        const x1 = PADL + (r.start_ms/durationMs)*W;
+        const x2 = PADL + (r.end_ms/durationMs)*W;
+        const rect = document.createElementNS("http://www.w3.org/2000/svg","rect");
+        rect.setAttribute("x", x1);
+        rect.setAttribute("y", PADT);
+        rect.setAttribute("width", Math.max(0, x2-x1));
+        rect.setAttribute("height", H);
+        rect.setAttribute("class","highlight-rect");
+        svg.appendChild(rect);
+      }
+
+      // Emotion path
+      const path = document.createElementNS("http://www.w3.org/2000/svg","path");
+      path.setAttribute("fill","none");
+      path.setAttribute("stroke","var(--signal-emotion)");
+      path.setAttribute("stroke-width","2.2");
+      path.setAttribute("opacity","0.98");
+
+      const d = [];
+      for (let i=0;i<emotionSeries.length;i++){
+        const p = emotionSeries[i];
+        const x = PADL + (p.timestamp_ms/durationMs)*W;
+        const y = PADT + (1 - (p.value/100))*H;
+        d.push(`${i===0?'M':'L'}${x.toFixed(2)},${y.toFixed(2)}`);
+      }
+      path.setAttribute("d", d.join(" "));
+      svg.appendChild(path);
+
+      // Attention markers (vertical ticks)
+      const attnG = document.createElementNS("http://www.w3.org/2000/svg","g");
+      for (const m of (attentionMarkers||[])){
+        const x = PADL + (m.timestamp_ms/durationMs)*W;
+        const tick = document.createElementNS("http://www.w3.org/2000/svg","line");
+        tick.setAttribute("x1", x);
+        tick.setAttribute("x2", x);
+        tick.setAttribute("y1", PADT);
+        tick.setAttribute("y2", PADT + H);
+        tick.setAttribute("stroke", "var(--signal-attention)");
+        tick.setAttribute("opacity", m.strength==="high" ? "0.40" : m.strength==="medium" ? "0.25" : "0.16");
+        tick.setAttribute("stroke-width", m.strength==="high" ? "2" : "1");
+        attnG.appendChild(tick);
+      }
+      svg.appendChild(attnG);
+
+      // Motivation markers (dots)
+      const motG = document.createElementNS("http://www.w3.org/2000/svg","g");
+      for (const m of (motivationMarkers||[])){
+        const x = PADL + (m.timestamp_ms/durationMs)*W;
+        const y = PADT + 0.18*H; // fixed band near top to stay readable
+        const c = document.createElementNS("http://www.w3.org/2000/svg","circle");
+        c.setAttribute("cx", x);
+        c.setAttribute("cy", y);
+        c.setAttribute("r", m.strength==="strong" ? 5 : m.strength==="moderate" ? 4 : 3);
+        c.setAttribute("fill", "var(--signal-motivation)");
+        c.setAttribute("opacity", m.strength==="strong" ? "0.95" : m.strength==="moderate" ? "0.75" : "0.55");
+        motG.appendChild(c);
+      }
+      svg.appendChild(motG);
+
+      // Cursor line
+      const cursor = document.createElementNS("http://www.w3.org/2000/svg","line");
+      cursor.setAttribute("class","cursor-line");
+      cursor.setAttribute("x1", PADL);
+      cursor.setAttribute("x2", PADL);
+      cursor.setAttribute("y1", PADT);
+      cursor.setAttribute("y2", PADT + H);
+      cursor.style.display = "none";
+      svg.appendChild(cursor);
+
+      // Click/hover mapping
+      let isHovering = false;
+
+      const findNearestEmotion = (tMs) => {
+        // binary search nearest by timestamp
+        const arr = emotionSeries;
+        if (!arr.length) return null;
+        let lo=0, hi=arr.length-1;
+        while (lo<hi){
+          const mid = Math.floor((lo+hi)/2);
+          if (arr[mid].timestamp_ms < tMs) lo=mid+1; else hi=mid;
+        }
+        const a = arr[clamp(lo-1,0,arr.length-1)];
+        const b = arr[lo];
+        return (Math.abs(a.timestamp_ms-tMs) < Math.abs(b.timestamp_ms-tMs)) ? a : b;
+      };
+
+      const findNearestMarker = (markers, tMs) => {
+        if (!markers || !markers.length) return null;
+        let best = markers[0], bestD = Math.abs(best.timestamp_ms - tMs);
+        for (const m of markers){
+          const d = Math.abs(m.timestamp_ms - tMs);
+          if (d < bestD){
+            best = m; bestD = d;
+          }
+        }
+        // Only show if close enough (2% of duration)
+        return bestD <= durationMs*0.02 ? best : null;
+      };
+
+      const setCursor = (tMs) => {
+        const x = PADL + (tMs/durationMs)*W;
+        cursor.setAttribute("x1", x);
+        cursor.setAttribute("x2", x);
+        cursor.style.display = "block";
+      };
+
+      const showTooltip = (clientX, clientY, tMs) => {
+        const emotion = findNearestEmotion(tMs);
+        const attn = findNearestMarker(attentionMarkers, tMs);
+        const mot  = findNearestMarker(motivationMarkers, tMs);
+
+        const rows = [];
+        rows.push(`<div class="row"><span class="t-muted">Time</span><span class="time">${escapeHtml(msToTime(tMs))}</span></div>`);
+        if (emotion) rows.push(`<div class="row"><span class="t-muted">Emotion</span><span>${Math.round(emotion.value)}</span></div>`);
+        if (attn) rows.push(`<div class="row"><span class="t-muted">Attention</span><span>${escapeHtml(attn.strength)}</span></div>`);
+        if (mot) rows.push(`<div class="row"><span class="t-muted">Motivation</span><span>${escapeHtml(mot.strength)}${mot.needState?` · ${escapeHtml(mot.needState)}`:""}</span></div>`);
+
+        tooltip.innerHTML = rows.join("");
+        tooltip.style.display = "block";
+
+        const rect = container.getBoundingClientRect();
+        const x = clamp(clientX - rect.left + 12, 8, rect.width - 200);
+        const y = clamp(clientY - rect.top + 12, 8, rect.height - 110);
+        tooltip.style.left = x + "px";
+        tooltip.style.top = y + "px";
+      };
+
+      const updateReadout = (tMs) => {
+        timeReadout.textContent = msToTime(tMs);
+      };
+
+      // Public API attached to svg element for external sync
+      const api = {
+        seekToMs(tMs){
+          const t = clamp(tMs, 0, durationMs);
+          setCursor(t);
+          updateReadout(t);
+        },
+        highlightRange(range){
+          // optional: can re-render highlights if needed
+        }
+      };
+      svg.__api = api;
+
+      // Mouse move
+      container.addEventListener("mousemove", (e) => {
+        isHovering = true;
+        const rect = container.getBoundingClientRect();
+        const x = clamp(e.clientX - rect.left, 0, rect.width);
+        const xNorm = clamp((x / rect.width), 0, 1);
+        const tMs = Math.round(xNorm * durationMs);
+        setCursor(tMs);
+        updateReadout(tMs);
+        showTooltip(e.clientX, e.clientY, tMs);
+      });
+
+      container.addEventListener("mouseleave", () => {
+        isHovering = false;
+        tooltip.style.display = "none";
+        cursor.style.display = "none";
+      });
+
+      // Click to emit custom event
+      container.addEventListener("click", (e) => {
+        const rect = container.getBoundingClientRect();
+        const x = clamp(e.clientX - rect.left, 0, rect.width);
+        const tMs = Math.round((x / rect.width) * durationMs);
+        container.dispatchEvent(new CustomEvent("timeline:select", { detail: { timestamp_ms: tMs }}));
+      });
+
+      return api;
+    }
+
+    // ---------- KEY MOMENTS ----------
+    function renderMoments(listElId, moments, onClick){
+      const root = document.getElementById(listElId);
+      root.innerHTML = "";
+      for (const m of moments){
+        const el = document.createElement("div");
+        el.className = "moment-card";
+        el.dataset.id = m.id;
+        el.innerHTML = `
+          <div class="moment-meta">
+            <span class="time">${escapeHtml(msToTime(m.start_ms))} – ${escapeHtml(msToTime(m.end_ms))}</span>
+            <span class="pillset">
+              <span class="pill attn">Attention: ${escapeHtml(m.attention)}</span>
+              <span class="pill emot">Emotion: ${escapeHtml(m.emotion)}</span>
+              <span class="pill motiv">Motivation: ${escapeHtml(m.motivation)}</span>
+            </span>
+          </div>
+          <div class="moment-desc">${escapeHtml(m.description)}</div>
+        `;
+        el.addEventListener("click", ()=> onClick(m));
+        root.appendChild(el);
+      }
+    }
+
+    // ---------- EVENTS TABLE ----------
+    let sortState = { key: "event_name", dir: "asc" };
+    let selectedEventId = null;
+
+    function renderEvents(){
+      const tbody = document.getElementById("eventsTbody");
+      const typeFilter = document.getElementById("filterEventType").value;
+      const q = document.getElementById("searchEvents").value.trim().toLowerCase();
+
+      let rows = [...DATA.events];
+
+      // filter type
+      if (typeFilter !== "all"){
+        rows = rows.filter(r => r.event_type === typeFilter);
+      }
+      // search
+      if (q){
+        rows = rows.filter(r => {
+          const blob = `${r.event_name} ${r.event_type} ${r.notes||""} ${r.rmt?.dominant_need_state||""}`.toLowerCase();
+          return blob.includes(q);
+        });
+      }
+
+      // sort
+      rows.sort((a,b)=> {
+        const dir = sortState.dir === "asc" ? 1 : -1;
+        const ka = sortKey(a, sortState.key);
+        const kb = sortKey(b, sortState.key);
+        if (ka < kb) return -1*dir;
+        if (ka > kb) return  1*dir;
+        return 0;
+      });
+
+      tbody.innerHTML = "";
+      for (const r of rows){
+        const tr = document.createElement("tr");
+        if (r.event_id === selectedEventId) tr.classList.add("selected");
+        tr.innerHTML = `
+          <td>${escapeHtml(r.event_name)}</td>
+          <td class="cell-muted">${escapeHtml(r.event_type)}</td>
+          <td class="time">${escapeHtml(msToTime(r.start_ms))}–${escapeHtml(msToTime(r.end_ms))}</td>
+
+          <td>${badgeNumber(r.mediaprobe?.emotion_avg, "Emotion")}</td>
+          <td>${badgeLevel(r.mediaprobe?.intensity_label)}</td>
+
+          <td>${badgeLevel(r.lumen?.attention_quality)}</td>
+          <td class="time">${r.lumen?.peak_timestamp_ms!=null ? escapeHtml(msToTime(r.lumen.peak_timestamp_ms)) : "<span class='cell-muted'>—</span>"}</td>
+
+          <td>${badgeStrength(r.rmt?.motivation_strength)}</td>
+          <td>${r.rmt?.dominant_need_state ? escapeHtml(r.rmt.dominant_need_state) : "<span class='cell-muted'>—</span>"}</td>
+
+          <td class="cell-muted">${r.notes ? escapeHtml(r.notes) : "—"}</td>
+        `;
+        tr.addEventListener("click", () => {
+          selectedEventId = r.event_id;
+          // Seek: choose program if event seems program/adjacent/break; otherwise creative
+          const useProgram = (r.event_type !== "creative");
+          const targetMs = r.start_ms;
+          selectRange(useProgram ? "program" : "creative", r.start_ms, r.end_ms);
+          seekTo(useProgram ? "program" : "creative", targetMs);
+          renderEvents();
+        });
+        tbody.appendChild(tr);
+      }
+    }
+
+    function sortKey(r, key){
+      switch(key){
+        case "event_name": return (r.event_name||"").toLowerCase();
+        case "event_type": return (r.event_type||"").toLowerCase();
+        case "time_range": return r.start_ms || 0;
+        case "mp_emotion": return r.mediaprobe?.emotion_avg ?? -1;
+        case "mp_intensity": return levelToNum(r.mediaprobe?.intensity_label);
+        case "lumen_attention": return levelToNum(r.lumen?.attention_quality);
+        case "lumen_peak": return r.lumen?.peak_timestamp_ms ?? -1;
+        case "rmt_strength": return strengthToNum(r.rmt?.motivation_strength);
+        case "rmt_need": return (r.rmt?.dominant_need_state||"").toLowerCase();
+        case "notes": return (r.notes||"").toLowerCase();
+        default: return (r.event_name||"").toLowerCase();
+      }
+    }
+
+    function levelToNum(x){
+      if (x==="high") return 3;
+      if (x==="medium") return 2;
+      if (x==="low") return 1;
+      return 0;
+    }
+    function strengthToNum(x){
+      if (x==="strong") return 3;
+      if (x==="moderate") return 2;
+      if (x==="weak") return 1;
+      return 0;
+    }
+
+    function badgeLevel(level){
+      if (!level) return `<span class="cell-muted">—</span>`;
+      const dot = level==="high" ? "high" : level==="medium" ? "medium" : "low";
+      return `<span class="badge"><span class="b-dot ${dot}"></span>${escapeHtml(level)}</span>`;
+    }
+    function badgeStrength(s){
+      if (!s) return `<span class="cell-muted">—</span>`;
+      const dot = s==="strong" ? "high" : s==="moderate" ? "medium" : "low";
+      return `<span class="badge"><span class="b-dot ${dot}"></span>${escapeHtml(s)}</span>`;
+    }
+    function badgeNumber(n, label){
+      if (n==null || Number.isNaN(n)) return `<span class="cell-muted">—</span>`;
+      const dot = (n>=66) ? "high" : (n>=45) ? "medium" : "low";
+      return `<span class="badge"><span class="b-dot ${dot}"></span>${escapeHtml(String(n))}</span>`;
+    }
+
+    // ---------- SYNC: VIDEO <-> TIMELINE <-> MOMENTS/EVENTS ----------
+    let creativeChartApi = null;
+    let programChartApi = null;
+
+    function seekTo(which, timestampMs){
+      const t = Math.max(0, timestampMs);
+      if (which === "creative"){
+        // Set video if loaded
+        if (creativeVideo.duration){
+          creativeVideo.currentTime = clamp(t/1000, 0, creativeVideo.duration);
+        }
+        creativeChartApi?.seekToMs(t);
+      } else {
+        if (programVideo.duration){
+          programVideo.currentTime = clamp(t/1000, 0, programVideo.duration);
+        }
+        programChartApi?.seekToMs(t);
+      }
+    }
+
+    function selectRange(which, startMs, endMs){
+      // lightweight highlight: rebuild chart with highlight overlay
+      if (which === "creative"){
+        creativeChartApi = buildTimelineChart({
+          containerId: "creativeTimeline",
+          svgId: "creativeSvg",
+          tooltipId: "creativeTooltip",
+          timeReadoutId: "creativeTimeReadout",
+          durationMs: DATA.creative.durationMs,
+          emotionSeries: DATA.creative.emotionSeries,
+          attentionMarkers: DATA.creative.attentionMarkers,
+          motivationMarkers: DATA.creative.motivationMarkers,
+          highlightRanges: [{ start_ms: startMs, end_ms: endMs }]
+        });
+      } else {
+        const ranges = [...(DATA.program.creativeInsertionWindows||[])];
+        // always keep insertion window highlight + selection highlight
+        const hr = [];
+        for (const r of ranges) hr.push({start_ms:r.start_ms, end_ms:r.end_ms});
+        hr.push({start_ms:startMs, end_ms:endMs});
+
+        programChartApi = buildTimelineChart({
+          containerId: "programTimeline",
+          svgId: "programSvg",
+          tooltipId: "programTooltip",
+          timeReadoutId: "programTimeReadout",
+          durationMs: DATA.program.durationMs,
+          emotionSeries: DATA.program.emotionSeries,
+          attentionMarkers: DATA.program.attentionMarkers,
+          motivationMarkers: DATA.program.motivationMarkers,
+          highlightRanges: hr
+        });
+      }
+      attachTimelineHandlers(); // reattach event dispatch handlers
+    }
+
+    function attachTimelineHandlers(){
+      const cT = document.getElementById("creativeTimeline");
+      const pT = document.getElementById("programTimeline");
+
+      // prevent duplicate listeners: clone nodes? Instead: remove by replacing handler references
+      // Here we add idempotent listeners using a flag
+      if (!cT.__wired){
+        cT.addEventListener("timeline:select", (e) => {
+          const tMs = e.detail.timestamp_ms;
+          seekTo("creative", tMs);
+        });
+        cT.__wired = true;
+      }
+
+      if (!pT.__wired){
+        pT.addEventListener("timeline:select", (e) => {
+          const tMs = e.detail.timestamp_ms;
+          seekTo("program", tMs);
+        });
+        pT.__wired = true;
+      }
+    }
+
+    function wireVideoSync(){
+      creativeVideo.addEventListener("timeupdate", () => {
+        const tMs = Math.round(creativeVideo.currentTime * 1000);
+        creativeChartApi?.seekToMs(tMs);
+      });
+
+      programVideo.addEventListener("timeupdate", () => {
+        const tMs = Math.round(programVideo.currentTime * 1000);
+        programChartApi?.seekToMs(tMs);
+      });
+    }
+
+    // ---------- TABLE SORT / FILTER WIRING ----------
+    function wireEventsControls(){
+      document.getElementById("filterEventType").addEventListener("change", renderEvents);
+      document.getElementById("searchEvents").addEventListener("input", () => {
+        // small debounce
+        clearTimeout(document.getElementById("searchEvents").__t);
+        document.getElementById("searchEvents").__t = setTimeout(renderEvents, 120);
+      });
+
+      document.querySelectorAll("#eventsTable thead th").forEach(th => {
+        th.addEventListener("click", () => {
+          const key = th.dataset.key;
+          if (!key) return;
+
+          if (sortState.key === key){
+            sortState.dir = (sortState.dir === "asc") ? "desc" : "asc";
+          } else {
+            sortState.key = key;
+            sortState.dir = "asc";
+          }
+          renderEvents();
+        });
+      });
+    }
+
+    // ---------- INIT ----------
+    function init(){
+      renderExec();
+      initVideos();
+
+      // build charts (baseline)
+      creativeChartApi = buildTimelineChart({
+        containerId: "creativeTimeline",
+        svgId: "creativeSvg",
+        tooltipId: "creativeTooltip",
+        timeReadoutId: "creativeTimeReadout",
+        durationMs: DATA.creative.durationMs,
+        emotionSeries: DATA.creative.emotionSeries,
+        attentionMarkers: DATA.creative.attentionMarkers,
+        motivationMarkers: DATA.creative.motivationMarkers,
+        highlightRanges: []
+      });
+
+      const insertionRanges = (DATA.program.creativeInsertionWindows||[]).map(r => ({start_ms:r.start_ms, end_ms:r.end_ms}));
+      programChartApi = buildTimelineChart({
+        containerId: "programTimeline",
+        svgId: "programSvg",
+        tooltipId: "programTooltip",
+        timeReadoutId: "programTimeReadout",
+        durationMs: DATA.program.durationMs,
+        emotionSeries: DATA.program.emotionSeries,
+        attentionMarkers: DATA.program.attentionMarkers,
+        motivationMarkers: DATA.program.motivationMarkers,
+        highlightRanges: insertionRanges
+      });
+
+      attachTimelineHandlers();
+      wireVideoSync();
+
+      renderMoments("creativeMoments", DATA.creative.keyMoments, (m) => {
+        selectRange("creative", m.start_ms, m.end_ms);
+        seekTo("creative", m.start_ms);
+      });
+
+      renderMoments("programMoments", DATA.program.keyMoments, (m) => {
+        selectRange("program", m.start_ms, m.end_ms);
+        seekTo("program", m.start_ms);
+      });
+
+      wireEventsControls();
+      renderEvents();
+    }
+
+    // ---------- HTML ESCAPE ----------
+    function escapeHtml(str){
+      return String(str).replace(/[&<>"']/g, (m) => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+      }[m]));
+    }
+
+    init();
+  </script>
+</body>
+</html>
